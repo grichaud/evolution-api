@@ -185,6 +185,7 @@ export type Websocket = {
   ENABLED: boolean;
   GLOBAL_EVENTS: boolean;
   ALLOWED_HOSTS?: string;
+  AUTHENTICATION_REQUIRED: boolean;
 };
 
 export type WaBusiness = {
@@ -681,7 +682,8 @@ export class ConfigService {
       WEBSOCKET: {
         ENABLED: process.env?.WEBSOCKET_ENABLED === 'true',
         GLOBAL_EVENTS: process.env?.WEBSOCKET_GLOBAL_EVENTS === 'true',
-        ALLOWED_HOSTS: process.env?.WEBSOCKET_ALLOWED_HOSTS,
+        ALLOWED_HOSTS: process.env ?.WEBSOCKET_ALLOWED_HOSTS,
+        AUTHENTICATION_REQUIRED: process.env ?.WEBSOCKET_AUTHENTICATION_REQUIRED === 'true',
       },
       PUSHER: {
         ENABLED: process.env?.PUSHER_ENABLED === 'true',
