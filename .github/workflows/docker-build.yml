@@ -30,7 +30,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            grichaud/evolution-api:custom
-            grichaud/evolution-api:v2.3.5-websocket-fix
+            giosanrichaud/evolution-api:custom
+            giosanrichaud/evolution-api:v2.3.5-websocket-fix
           cache-from: type=gha
           cache-to: type=gha,mode=max
