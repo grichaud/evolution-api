@@ -51,9 +51,15 @@ lerna-debug.log*
 build-custom.sh
 update-env-websocket.sh
 apply-websocket-fix.sh
+apply-websocket-fix.ps1
 compose.yaml
 .env
 prod.env
+prod.env.md
 *.env.backup.*
 .vs/
 @eaDir/
+nginx.conf
+patches/
+README_CUSTOM_BUILD.md
+WEBSOCKET_AUTH_FIX.md
