@@ -1,0 +1,36 @@
+Opción 1: Ver el nombre exacto en Chatwoot
+el nombre exacto es  rsBot    
+
+Opción 2: Verificar vía API
+Recuerda que todo lo que estamos haciendo es justamente porque esto nos devuelve error...     
+grichaud@smile:/volume1/docker/evolution_api$ curl -X GET "https://ch.gio-nas.synology.me/api/v1/accounts/1/inboxes" \
+
+>   -b /volume1/docker/chatwoot/cookies.txt
+
+{"errors":["You need to sign in or sign up before continuing."]}grichaud@smile:/volume1/docker/evolution_api$
+
+Pero primero necesitamos crear la sesión:
+Giovanni@PC-GIOVANNI MINGW64 ~
+$ curl -c cookies.txt -X POST "https://ch.gio-nas.synology.me/auth/sign_in" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "gio.richaud@gmail.com",
+    "password": "2484Gsan?"
+  }'
+
+{"data":{"access_token":"BsicfSnJhyLqZJN7V68fEGzS","account_id":1,"available_name":"Administrador","avatar_url":"https://ch.gio-nas.synology.me/rails/a
+ctive_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBCdz09IiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--ac50683af0bc75f831612b927b61e9
+afa5f885cf/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFy
+aWF0aW9uIn19--d299b54326ab17eadb70e58f4a45e664cd6380dc/Face.jpg","confirmed":true,"display_name":"","message_signature":null,"email":"gio.richaud@gmail
+.com","id":1,"inviter_id":null,"name":"Administrador","provider":"email","pubsub_token":"4s6HBJEf81A6PBofTD8XfCVD","role":"administrator","ui_settings"
+:{},"uid":"gio.richaud@gmail.com","type":"SuperAdmin","accounts":[{"id":1,"name":"Gio Automations","status":"active","active_at":"2025-10-24T05:26:52.2
+58Z","role":"administrator","permissions":["administrator"],"availability":"online","availability_status":"online","auto_offline":false,"custom_role_id
+":null,"custom_role":null}]}}
+Giovanni@PC-GIOVANNI MINGW64 ~
+$ curl -b cookies.txt -X GET "https://ch.gio-nas.synology.me/api/v1/accounts/1/inboxes" | jq
+bash: jq: command not found
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    64  100    64    0     0    526      0 --:--:-- --:--:-- --:--:--   537
+curl: Failed writing body
+Giovanni@PC-GIOVANNI MINGW64 ~
