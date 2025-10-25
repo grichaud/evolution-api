@@ -7,6 +7,7 @@ Baileys
 /Docker/.env
 
 # Logs
+logs/
 logs/**.json
 *.log
 npm-debug.log*
@@ -63,3 +64,6 @@ nginx.conf
 patches/
 README_CUSTOM_BUILD.md
 WEBSOCKET_AUTH_FIX.md
+
+# Chatwoot nginx configuration
+chatwoot-nginx/

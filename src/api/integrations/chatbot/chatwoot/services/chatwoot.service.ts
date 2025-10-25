@@ -19,6 +19,7 @@ import ChatwootClient, {
   inbox,
 } from '@figuro/chatwoot-sdk';
 import { request as chatwootRequest } from '@figuro/chatwoot-sdk/dist/core/request';
+import { createPatchedChatwootClient } from '@api/integrations/chatbot/chatwoot/libs/chatwoot-client-patch';
 import { Chatwoot as ChatwootModel, Contact as ContactModel, Message as MessageModel } from '@prisma/client';
 import i18next from '@utils/i18n';
 import { sendTelemetry } from '@utils/sendTelemetry';
@@ -77,7 +78,7 @@ export class ChatwootService {
     return provider;
   }
 
-  private async clientCw(instance: InstanceDto) {
+    private async clientCw(instance: InstanceDto) {
     const provider = await this.getProvider(instance);
 
     if (!provider) {
@@ -87,9 +88,8 @@ export class ChatwootService {
 
     this.provider = provider;
 
-    const client = new ChatwootClient({
-      config: this.getClientCwConfig(),
-    });
+    // CRITICAL: Use patched client that sends 'api-access-token' instead of 'api_access_token'
+    const client = createPatchedChatwootClient(this.getClientCwConfig());
 
     return client;
   }
