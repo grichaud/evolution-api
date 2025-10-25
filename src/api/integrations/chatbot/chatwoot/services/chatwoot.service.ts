@@ -1,6 +1,7 @@
 import { InstanceDto } from '@api/dto/instance.dto';
 import { Options, Quoted, SendAudioDto, SendMediaDto, SendTextDto } from '@api/dto/sendMessage.dto';
 import { ChatwootDto } from '@api/integrations/chatbot/chatwoot/dto/chatwoot.dto';
+import { createPatchedChatwootClient } from '@api/integrations/chatbot/chatwoot/libs/chatwoot-client-patch';
 import { postgresClient } from '@api/integrations/chatbot/chatwoot/libs/postgres.client';
 import { chatwootImport } from '@api/integrations/chatbot/chatwoot/utils/chatwoot-import-helper';
 import { PrismaRepository } from '@api/repository/repository.service';
@@ -19,7 +20,6 @@ import ChatwootClient, {
   inbox,
 } from '@figuro/chatwoot-sdk';
 import { request as chatwootRequest } from '@figuro/chatwoot-sdk/dist/core/request';
-import { createPatchedChatwootClient } from '@api/integrations/chatbot/chatwoot/libs/chatwoot-client-patch';
 import { Chatwoot as ChatwootModel, Contact as ContactModel, Message as MessageModel } from '@prisma/client';
 import i18next from '@utils/i18n';
 import { sendTelemetry } from '@utils/sendTelemetry';
@@ -78,11 +78,17 @@ export class ChatwootService {
     return provider;
   }
 
-    private async clientCw(instance: InstanceDto) {
+  private async clientCw(instance: InstanceDto) {
     const provider = await this.getProvider(instance);
 
     if (!provider) {
       this.logger.error('provider not found');
+      return null;
+    }
+
+    // Verificar que el token esté presente
+    if (!provider.token) {
+      this.logger.error('Chatwoot token is required but not found');
       return null;
     }
 
@@ -95,6 +101,11 @@ export class ChatwootService {
   }
 
   public getClientCwConfig(): ChatwootAPIConfig & { nameInbox: string; mergeBrazilContacts: boolean } {
+    // Asegúrate de que this.provider.token tenga valor
+    if (!this.provider?.token) {
+      throw new Error('Chatwoot token is required');
+    }
+
     return {
       basePath: this.provider.url,
       with_credentials: true,
@@ -1048,7 +1059,7 @@ export class ChatwootService {
       data.append('source_id', sourceId);
     }
 
-        const config = {
+    const config = {
       method: 'post',
       maxBodyLength: Infinity,
       url: `${this.provider.url}/api/v1/accounts/${this.provider.accountId}/conversations/${conversationId}/messages`,
@@ -1121,7 +1132,7 @@ export class ChatwootService {
       data.append('attachments[]', fileStream, { filename: fileName });
     }
 
-        const config = {
+    const config = {
       method: 'post',
       maxBodyLength: Infinity,
       url: `${this.provider.url}/api/v1/accounts/${this.provider.accountId}/conversations/${conversation.id}/messages`,
