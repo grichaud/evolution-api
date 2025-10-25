@@ -1,5 +1,5 @@
 import { Logger } from '@config/logger.config';
-import { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 
 // Import types from chatwoot-sdk
 type ChatwootAPIConfig = {
@@ -14,14 +14,50 @@ interface ChatwootClientWithAxios {
   [key: string]: any;
 }
 
+const logger = new Logger('ChatwootClientPatch');
+
+/**
+ * Create a global patched axios instance for Chatwoot
+ * CRITICAL: This instance automatically converts all headers with underscores to hyphens
+ * because Chatwoot only accepts 'api-access-token' (with hyphens)
+ */
+export const createPatchedAxiosInstance = (): AxiosInstance => {
+  const patchedAxios = axios.create();
+
+  // Add request interceptor to transform headers
+  patchedAxios.interceptors.request.use(
+    (config: InternalAxiosRequestConfig) => {
+      if (config.headers) {
+        // Replace api_access_token with api-access-token
+        const token = config.headers['api_access_token'] || config.headers['api-access-token'];
+
+        if (token) {
+          delete config.headers['api_access_token'];
+          config.headers['api-access-token'] = token as string;
+          logger.verbose('Patched axios headers: api_access_token → api-access-token');
+        }
+      }
+
+      return config;
+    },
+    (error) => {
+      logger.error('Error in axios request interceptor: ' + error);
+      return Promise.reject(error);
+    },
+  );
+
+  return patchedAxios;
+};
+
+// Export a singleton instance
+export const patchedChatwootAxios = createPatchedAxiosInstance();
+
 /**
  * Patch Chatwoot SDK to use correct header name
  * CRITICAL: Chatwoot only accepts 'api-access-token' (with hyphens)
  * but @figuro/chatwoot-sdk sends 'api_access_token' (with underscores)
  */
 export function createPatchedChatwootClient(config: ChatwootAPIConfig): any {
-  const logger = new Logger('ChatwootClientPatch');
-
   try {
     // Dynamic import to avoid TypeScript issues with module resolution
     // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports

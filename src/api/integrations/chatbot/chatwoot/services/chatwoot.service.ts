@@ -1,7 +1,10 @@
 import { InstanceDto } from '@api/dto/instance.dto';
 import { Options, Quoted, SendAudioDto, SendMediaDto, SendTextDto } from '@api/dto/sendMessage.dto';
 import { ChatwootDto } from '@api/integrations/chatbot/chatwoot/dto/chatwoot.dto';
-import { createPatchedChatwootClient } from '@api/integrations/chatbot/chatwoot/libs/chatwoot-client-patch';
+import {
+  createPatchedChatwootClient,
+  patchedChatwootAxios,
+} from '@api/integrations/chatbot/chatwoot/libs/chatwoot-client-patch';
 import { postgresClient } from '@api/integrations/chatbot/chatwoot/libs/postgres.client';
 import { chatwootImport } from '@api/integrations/chatbot/chatwoot/utils/chatwoot-import-helper';
 import { PrismaRepository } from '@api/repository/repository.service';
@@ -10,7 +13,7 @@ import { WAMonitoringService } from '@api/services/monitor.service';
 import { Events } from '@api/types/wa.types';
 import { Chatwoot, ConfigService, Database, HttpServer } from '@config/env.config';
 import { Logger } from '@config/logger.config';
-import ChatwootClient, {
+import {
   ChatwootAPIConfig,
   contact,
   contact_inboxes,
@@ -23,7 +26,6 @@ import { request as chatwootRequest } from '@figuro/chatwoot-sdk/dist/core/reque
 import { Chatwoot as ChatwootModel, Contact as ContactModel, Message as MessageModel } from '@prisma/client';
 import i18next from '@utils/i18n';
 import { sendTelemetry } from '@utils/sendTelemetry';
-import axios from 'axios';
 import { WAMessageContent, WAMessageKey } from 'baileys';
 import dayjs from 'dayjs';
 import FormData from 'form-data';
@@ -1071,7 +1073,7 @@ export class ChatwootService {
     };
 
     try {
-      const { data } = await axios.request(config);
+      const { data } = await patchedChatwootAxios.request(config);
 
       return data;
     } catch (error) {
@@ -1144,7 +1146,7 @@ export class ChatwootService {
     };
 
     try {
-      const { data } = await axios.request(config);
+      const { data } = await patchedChatwootAxios.request(config);
 
       return data;
     } catch (error) {
@@ -1162,7 +1164,7 @@ export class ChatwootService {
         const parts = media.split('/');
         fileName = decodeURIComponent(parts[parts.length - 1]);
 
-        const response = await axios.get(media, {
+        const response = await patchedChatwootAxios.get(media, {
           responseType: 'arraybuffer',
         });
         mimeType = response.headers['content-type'];
@@ -2131,7 +2133,7 @@ export class ChatwootService {
 
         const isAdsMessage = (adsMessage && adsMessage.title) || adsMessage.body || adsMessage.thumbnailUrl;
         if (isAdsMessage) {
-          const imgBuffer = await axios.get(adsMessage.thumbnailUrl, { responseType: 'arraybuffer' });
+          const imgBuffer = await patchedChatwootAxios.get(adsMessage.thumbnailUrl, { responseType: 'arraybuffer' });
 
           const extension = mimeTypes.extension(imgBuffer.headers['content-type']);
           const mimeType = extension && mimeTypes.lookup(extension);

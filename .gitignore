@@ -68,3 +68,4 @@ WEBSOCKET_AUTH_FIX.md
 # Chatwoot nginx configuration
 chatwoot-nginx/
 logs/log.txt
+.claude/settings.local.json
