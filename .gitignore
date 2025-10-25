@@ -46,3 +46,14 @@ lerna-debug.log*
 .tool-versions
 
 /prisma/migrations/*
+
+# Custom scripts y configuración local
+build-custom.sh
+update-env-websocket.sh
+apply-websocket-fix.sh
+compose.yaml
+.env
+prod.env
+*.env.backup.*
+.vs/
+@eaDir/

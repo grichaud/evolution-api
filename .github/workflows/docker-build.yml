@@ -1,8 +1,9 @@
-name: Build Docker Image
+name: Build Custom Docker Image
 
 on:
   push:
     branches:
+      - main
       - release/2.3.5
   workflow_dispatch:
 
@@ -11,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         
       - name: Set up Docker Buildx
@@ -23,13 +24,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           
-      - name: Build and push
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile
           push: true
-          tags: |
-            grichaud/evolution-api:custom
-            grichaud/evolution-api:latest
+                    tags: |
+            giosanrichaud/evolution-api:custom
+            giosanrichaud/evolution-api:latest
+            giosanrichaud/evolution-api:v2.3.6-chatwoot-fix
           cache-from: type=gha
           cache-to: type=gha,mode=max

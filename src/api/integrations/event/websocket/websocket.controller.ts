@@ -38,6 +38,12 @@ export class WebsocketController extends EventController implements EventControl
             .map((h) => h.trim())
             .includes(remoteAddress);
 
+          // CAMBIO CLAVE: Verificar si la autenticación está deshabilitada
+          if (!websocketConfig.AUTHENTICATION_REQUIRED) {
+            return callback(null, true);
+          }
+
+
           if (params.has('EIO') && isAllowedHost) {
             return callback(null, true);
           }
