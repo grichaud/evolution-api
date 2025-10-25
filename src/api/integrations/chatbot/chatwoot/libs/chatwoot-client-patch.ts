@@ -6,7 +6,7 @@ type ChatwootAPIConfig = {
   basePath: string;
   with_credentials?: boolean;
   credentials?: string;
-  token: string;
+  token: string | any; // Allow Resolver<string> from Prisma
 };
 
 interface ChatwootClientWithAxios {
