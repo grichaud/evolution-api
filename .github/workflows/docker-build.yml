@@ -29,8 +29,8 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          push: true
-                    tags: |
+                    push: true
+          tags: |
             giosanrichaud/evolution-api:custom
             giosanrichaud/evolution-api:latest
             giosanrichaud/evolution-api:v2.3.6-chatwoot-fix
