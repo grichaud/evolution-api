@@ -87,52 +87,25 @@ export const patchedChatwootAxios = createPatchedAxiosInstance();
  * CRITICAL: Chatwoot only accepts 'api-access-token' (with hyphens)
  * but @figuro/chatwoot-sdk sends 'api_access_token' (with underscores)
  */
+/**
+ * Creates a Chatwoot client
+ * NOTE: Axios is already globally patched in src/utils/patch-axios.ts
+ * which is imported at the start of src/main.ts
+ */
 export function createPatchedChatwootClient(config: ChatwootAPIConfig): any {
   try {
-    // CRITICAL FIX: Patch axios at the global level to transform headers
-    // The SDK hardcodes 'api_access_token' in headers (line 148 of request.js)
-    // We need to patch axios.request BEFORE the SDK uses it
     const patchedConfig = {
       ...config,
       token: config.token,
     };
 
-    // Dynamic import to avoid TypeScript issues with module resolution
+    // The SDK will use the globally patched axios
     // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
     const ChatwootClient = require('@figuro/chatwoot-sdk').default;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
-    const axiosModule = require('axios');
-
-    // Get the default axios instance
-    const defaultAxios = axiosModule.default || axiosModule;
-
-    // Patch axios.request globally to transform headers AFTER the SDK creates them
-    const originalAxiosRequest = defaultAxios.request.bind(defaultAxios);
-
-    defaultAxios.request = function (requestConfig: any) {
-      logger.log(`[DEBUG SDK] Intercepting axios request to: ${requestConfig.url}`);
-
-      if (requestConfig.headers) {
-        logger.log(`[DEBUG SDK] Headers BEFORE patch: ${JSON.stringify(requestConfig.headers)}`);
-
-        // Fix the header name
-        if (requestConfig.headers['api_access_token']) {
-          requestConfig.headers['api-access-token'] = requestConfig.headers['api_access_token'];
-          delete requestConfig.headers['api_access_token'];
-          logger.log('[DEBUG SDK] ✅ Transformed header: api_access_token → api-access-token');
-        }
-
-        logger.log(`[DEBUG SDK] Headers AFTER patch: ${JSON.stringify(requestConfig.headers)}`);
-      }
-
-      return originalAxiosRequest(requestConfig);
-    };
-
-    logger.log('[DEBUG SDK] ✅ Global axios.request function patched successfully');
 
     const client = new ChatwootClient({ config: patchedConfig }) as ChatwootClientWithAxios;
 
-    logger.log('Chatwoot client created with patched SDK');
+    logger.log('Chatwoot client created (using globally patched axios)');
 
     return client;
   } catch (error) {

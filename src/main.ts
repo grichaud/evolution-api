@@ -1,5 +1,7 @@
 // Import this first from sentry instrument!
 import '@utils/instrumentSentry';
+// CRITICAL: Patch axios BEFORE any module that uses it (especially Chatwoot SDK)
+import '@utils/patch-axios';
 
 // Now import other modules
 import { ProviderFiles } from '@api/provider/sessions';
