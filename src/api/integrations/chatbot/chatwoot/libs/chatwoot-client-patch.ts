@@ -27,21 +27,51 @@ export const createPatchedAxiosInstance = (): AxiosInstance => {
   // Add request interceptor to transform headers
   patchedAxios.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
+      logger.log(`[DEBUG] Chatwoot HTTP Request to: ${config.url}`);
+      logger.log(`[DEBUG] Method: ${config.method?.toUpperCase()}`);
+
       if (config.headers) {
+        // Log ALL headers BEFORE transformation
+        logger.log(`[DEBUG] Headers BEFORE patch: ${JSON.stringify(config.headers, null, 2)}`);
+
         // Replace api_access_token with api-access-token
         const token = config.headers['api_access_token'] || config.headers['api-access-token'];
 
         if (token) {
           delete config.headers['api_access_token'];
           config.headers['api-access-token'] = token as string;
-          logger.verbose('Patched axios headers: api_access_token → api-access-token');
+          logger.log('[DEBUG] ✅ Transformed header: api_access_token → api-access-token');
+        } else {
+          logger.warn('[DEBUG] ⚠️  No api_access_token or api-access-token found in headers!');
         }
+
+        // Log ALL headers AFTER transformation
+        logger.log(`[DEBUG] Headers AFTER patch: ${JSON.stringify(config.headers, null, 2)}`);
+      } else {
+        logger.warn('[DEBUG] ⚠️  No headers object in request config!');
       }
 
       return config;
     },
     (error) => {
-      logger.error('Error in axios request interceptor: ' + error);
+      logger.error('[DEBUG] ❌ Error in axios request interceptor: ' + error);
+      return Promise.reject(error);
+    },
+  );
+
+  // Add response interceptor to log responses
+  patchedAxios.interceptors.response.use(
+    (response) => {
+      logger.log(`[DEBUG] ✅ Chatwoot Response from: ${response.config.url}`);
+      logger.log(`[DEBUG] Status: ${response.status} ${response.statusText}`);
+      logger.log(`[DEBUG] Response data: ${JSON.stringify(response.data).substring(0, 500)}`);
+      return response;
+    },
+    (error) => {
+      logger.error(`[DEBUG] ❌ Chatwoot Error Response from: ${error.config?.url}`);
+      logger.error(`[DEBUG] Status: ${error.response?.status} ${error.response?.statusText}`);
+      logger.error(`[DEBUG] Error data: ${JSON.stringify(error.response?.data)}`);
+      logger.error(`[DEBUG] Full error: ${error.message}`);
       return Promise.reject(error);
     },
   );
@@ -72,21 +102,32 @@ export function createPatchedChatwootClient(config: ChatwootAPIConfig): any {
       // Add request interceptor to transform headers
       axiosInstance.interceptors.request.use(
         (axiosConfig: InternalAxiosRequestConfig) => {
+          logger.log(`[DEBUG SDK] Chatwoot SDK Request to: ${axiosConfig.url}`);
+          logger.log(`[DEBUG SDK] Method: ${axiosConfig.method?.toUpperCase()}`);
+
           // Replace api_access_token with api-access-token
           if (axiosConfig.headers) {
+            logger.log(`[DEBUG SDK] Headers BEFORE patch: ${JSON.stringify(axiosConfig.headers, null, 2)}`);
+
             const token = axiosConfig.headers['api_access_token'] || axiosConfig.headers['api-access-token'];
 
             if (token) {
               delete axiosConfig.headers['api_access_token'];
               axiosConfig.headers['api-access-token'] = token as string;
-              logger.verbose('Patched Chatwoot SDK headers: api_access_token → api-access-token');
+              logger.log('[DEBUG SDK] ✅ Transformed header: api_access_token → api-access-token');
+            } else {
+              logger.warn('[DEBUG SDK] ⚠️  No api_access_token or api-access-token found in headers!');
             }
+
+            logger.log(`[DEBUG SDK] Headers AFTER patch: ${JSON.stringify(axiosConfig.headers, null, 2)}`);
+          } else {
+            logger.warn('[DEBUG SDK] ⚠️  No headers object in request config!');
           }
 
           return axiosConfig;
         },
         (error) => {
-          logger.error('Error in Chatwoot request interceptor: ' + error);
+          logger.error('[DEBUG SDK] ❌ Error in Chatwoot request interceptor: ' + error);
           return Promise.reject(error);
         },
       );
