@@ -15,6 +15,7 @@ COPY ./package*.json ./
 COPY ./.git ./.git
 COPY ./tsconfig.json ./
 COPY ./tsup.config.ts ./
+COPY ./scripts ./scripts
 
 # Instalar dependencias y limpiar .git en el mismo stage para reducir tamaño
 RUN npm ci --silent && \
