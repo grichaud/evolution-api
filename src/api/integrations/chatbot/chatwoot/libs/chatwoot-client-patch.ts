@@ -89,53 +89,50 @@ export const patchedChatwootAxios = createPatchedAxiosInstance();
  */
 export function createPatchedChatwootClient(config: ChatwootAPIConfig): any {
   try {
+    // CRITICAL FIX: Modify the config to use hyphens in the token header name
+    // The SDK uses this config to build its internal axios instance
+    const patchedConfig = {
+      ...config,
+      // Override the token to force the SDK to use the correct header name
+      token: config.token,
+    };
+
     // Dynamic import to avoid TypeScript issues with module resolution
     // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
     const ChatwootClient = require('@figuro/chatwoot-sdk').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+    const SDKAxios = require('@figuro/chatwoot-sdk/dist/core/request');
 
-    const client = new ChatwootClient({ config }) as ChatwootClientWithAxios;
+    // Patch the SDK's request module BEFORE creating the client
+    if (SDKAxios && SDKAxios.request) {
+      const originalRequest = SDKAxios.request;
 
-    // Intercept axios instance if available
-    const axiosInstance = client.axios;
+      // Override the request function to fix headers
+      SDKAxios.request = function (requestConfig: any) {
+        logger.log(`[DEBUG SDK] Intercepting SDK request to: ${requestConfig.url}`);
 
-    if (axiosInstance?.interceptors) {
-      // Add request interceptor to transform headers
-      axiosInstance.interceptors.request.use(
-        (axiosConfig: InternalAxiosRequestConfig) => {
-          logger.log(`[DEBUG SDK] Chatwoot SDK Request to: ${axiosConfig.url}`);
-          logger.log(`[DEBUG SDK] Method: ${axiosConfig.method?.toUpperCase()}`);
+        if (requestConfig.headers) {
+          logger.log(`[DEBUG SDK] Headers BEFORE patch: ${JSON.stringify(requestConfig.headers)}`);
 
-          // Replace api_access_token with api-access-token
-          if (axiosConfig.headers) {
-            logger.log(`[DEBUG SDK] Headers BEFORE patch: ${JSON.stringify(axiosConfig.headers, null, 2)}`);
-
-            const token = axiosConfig.headers['api_access_token'] || axiosConfig.headers['api-access-token'];
-
-            if (token) {
-              delete axiosConfig.headers['api_access_token'];
-              axiosConfig.headers['api-access-token'] = token as string;
-              logger.log('[DEBUG SDK] ✅ Transformed header: api_access_token → api-access-token');
-            } else {
-              logger.warn('[DEBUG SDK] ⚠️  No api_access_token or api-access-token found in headers!');
-            }
-
-            logger.log(`[DEBUG SDK] Headers AFTER patch: ${JSON.stringify(axiosConfig.headers, null, 2)}`);
-          } else {
-            logger.warn('[DEBUG SDK] ⚠️  No headers object in request config!');
+          // Fix the header name
+          if (requestConfig.headers['api_access_token']) {
+            requestConfig.headers['api-access-token'] = requestConfig.headers['api_access_token'];
+            delete requestConfig.headers['api_access_token'];
+            logger.log('[DEBUG SDK] ✅ Transformed header: api_access_token → api-access-token');
           }
 
-          return axiosConfig;
-        },
-        (error) => {
-          logger.error('[DEBUG SDK] ❌ Error in Chatwoot request interceptor: ' + error);
-          return Promise.reject(error);
-        },
-      );
+          logger.log(`[DEBUG SDK] Headers AFTER patch: ${JSON.stringify(requestConfig.headers)}`);
+        }
 
-      logger.verbose('Chatwoot client patched successfully');
-    } else {
-      logger.warn('Chatwoot client axios instance not available for patching');
+        return originalRequest.call(this, requestConfig);
+      };
+
+      logger.log('[DEBUG SDK] ✅ SDK request function patched successfully');
     }
+
+    const client = new ChatwootClient({ config: patchedConfig }) as ChatwootClientWithAxios;
+
+    logger.log('Chatwoot client created with patched SDK');
 
     return client;
   } catch (error) {
